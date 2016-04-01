@@ -1,10 +1,10 @@
 Scratch50
 =========
 
-Required libraries:
+Installation:
+-------------
 
-- requests
-    pip install requests
+pip install requests
 
 Usage: 
 ------
