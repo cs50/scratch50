@@ -199,13 +199,8 @@ if __name__ == '__main__':
 
                     # json we will be outputting
                     return_j = {
-                        'num_sprites': None,
                         'sprites': [],
                     }
-
-                    # number of sprites
-                    num_sprites = get_recursively(j, 'info')[0]['spriteCount']
-                    return_j['num_sprites'] = num_sprites
 
                     # number of scripts per sprite
                     sprites = get_recursively(j, 'objName')
@@ -226,8 +221,7 @@ if __name__ == '__main__':
 
                         return_j['sprites'].append({
                             'name': sprite['objName'],
-                            'num_scripts': num_scripts,
-                            'num_sounds': num_sounds,
+                            'sounds': num_sounds,
                             'scripts': [],
                         })
 
@@ -240,9 +234,9 @@ if __name__ == '__main__':
                                 num_blocks = count_lists(script[2])
 
                                 return_j['sprites'][index1]['scripts'].append({
-                                    'num_conditions': num_conditions,
-                                    'num_loops': num_loops,
-                                    'num_blocks': num_blocks
+                                    'conditions': num_conditions,
+                                    'loops': num_loops,
+                                    'blocks': num_blocks
                                 })
 
                     # number of variables per script
