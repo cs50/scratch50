@@ -253,9 +253,7 @@ if __name__ == '__main__':
                     else:
                         return_j['variables'] = len(variables[0])
 
-                    # output JSON
-                    with open(project_id + '.json', 'w') as f2:
-                        json.dump(return_j, f2)
+                    print json.dumps(return_j, indent=4, sort_keys=True)
 
         # remove scratch assembly folder
         shutil.rmtree(project_id)
