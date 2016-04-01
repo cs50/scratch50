@@ -197,10 +197,25 @@ if __name__ == '__main__':
                 with open(os.path.join(folder_path, item), 'r') as f:
                     j = json.load(f)
 
+                    # debug JSON
+                    # with open(project_id + '-debug.json', 'w') as f2:
+                    #     json.dump(j, f2, indent=4)
+
                     # json we will be outputting
                     return_j = {
                         'sprites': [],
                     }
+
+                    # number of variables per script
+                    variable_names = []
+                    variables = get_recursively(j, 'variables')
+                    if variables:
+                        variables = variables[0]
+                    else:
+                        variables = []
+
+                    for v in variables:
+                        variable_names.append(v['name'])
 
                     # number of scripts per sprite
                     sprites = get_recursively(j, 'objName')
@@ -214,21 +229,46 @@ if __name__ == '__main__':
                         else:
                             num_scripts = 0
 
+                        sound_names = []
+
                         if 'sounds' in sprite:
-                            num_sounds = len(sprite['sounds'])
-                        else:
-                            num_sounds = 0
+                            for sound in sprite['sounds']:
+                                sound_names.append(sound['soundName'])
 
                         return_j['sprites'].append({
                             'name': sprite['objName'],
-                            'sounds': num_sounds,
                             'scripts': [],
                         })
 
                         if num_scripts > 0:
                             for index2, script in enumerate(sprite['scripts']):
+                                valid_starts = [
+                                    'whenGreenFlag',
+                                    'whenIReceive',
+                                    'whenCloned',
+                                    'whenKeyPressed',
+                                    'whenClicked',
+                                    'whenSceneStarts',
+                                    'whenSensorGreaterThan',
+                                    'procDef'
+                                ]
+
+                                if script[2][0][0] not in valid_starts:
+                                    continue
+
+                                num_sounds = 0
+                                num_variables = 0
+
                                 flat_script = flatten(script)
                                 num_conditions = flat_script.count('doIf') + flat_script.count('doIfElse')
+
+                                for s in sound_names:
+                                    if s in flat_script:
+                                        num_sounds += 1
+
+                                for v in variable_names:
+                                    if v in flat_script:
+                                        num_variables += 1
 
                                 num_loops = flat_script.count('doRepeat') + flat_script.count('doForever') + flat_script.count('doUntil') + flat_script.count('doWaitUntil')
                                 num_blocks = count_lists(script[2])
@@ -236,16 +276,10 @@ if __name__ == '__main__':
                                 return_j['sprites'][index1]['scripts'].append({
                                     'conditions': num_conditions,
                                     'loops': num_loops,
-                                    'blocks': num_blocks
+                                    'blocks': num_blocks,
+                                    'variables': num_variables,
+                                    'sounds': num_sounds
                                 })
-
-                    # number of variables per script
-                    variables = get_recursively(j, 'variables')
-
-                    if not variables:
-                        return_j['variables'] = 0
-                    else:
-                        return_j['variables'] = len(variables[0])
 
                     print json.dumps(return_j, indent=4, sort_keys=True)
 
