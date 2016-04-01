@@ -4,7 +4,7 @@ Scratch50
 Installation:
 -------------
 
-pip install requests
+    pip install requests
 
 Usage: 
 ------
