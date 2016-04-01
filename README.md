@@ -3,9 +3,9 @@ Scratch50
 
 Required libraries:
 
--requests
+*requests
 
-(pip install requests)
+    pip install requests
 
 Usage: 
 ------
