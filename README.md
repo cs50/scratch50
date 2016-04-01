@@ -10,7 +10,8 @@ Required libraries:
 Usage: 
 ------
 
-python scratch50.py -d [Scratch URL to download] -o [Scratch project to open locally]
+    python scratch50.py -d https://scratch.mit.edu/projects/26329122/
+    python scratch50.py -o 26329122.sb2
 
 Output:
 
