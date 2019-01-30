@@ -105,6 +105,148 @@ def count_lists(l):
                 total += 1
     return total
 
+'''
+Parse sb3 file format instead of sb2, for newer Scratch.
+'''
+def parse_sb3(data):
+
+    num_sprites = 0
+    num_scripts = 0
+    num_conditionals = 0
+    num_loops = 0
+    num_variables = 0
+    num_sounds = 0
+    num_blocks = 0
+
+    counter = 0
+
+    for target in data['targets']:
+
+        # number of variables per actor ("target")
+        if not target['isStage']: 
+            num_sprites += 1
+
+        for variable in target['variables']:
+            num_variables += 1
+        
+        block_keys = target['blocks'].keys()
+        for key in block_keys:
+            
+            block = target['blocks'][key]
+            num_blocks += 1
+
+            if block['opcode'] in ['control_forever', 'control_repeat']:
+                num_loops += 1
+
+            if block['opcode'] in ['control_if']:
+                num_conditionals += 1
+
+            if block['opcode'] in ['event_whenflagclicked']:
+                num_scripts += 1
+
+        for sound in target['sounds']:
+            num_sounds += 1
+
+    # json we will output
+    return_j = {
+        'num_sprites': num_sprites,
+        'num_variables': num_variables,
+        'num_blocks': num_blocks,
+        'num_loops': num_loops,
+        'num_conditionals': num_conditionals,
+        'num_scripts': num_scripts,
+        'num_sounds': num_sounds
+    }
+
+    print json.dumps(return_j, indent=4, sort_keys=True)
+
+'''
+Parse sb2 file format, legacy Scratch projects.
+'''
+def parse_sb2(data):
+    
+    # json we will be outputting
+    return_j = {
+        'sprites': [],
+    }
+
+    # number of variables per script
+    variable_names = []
+    variables = get_recursively(j, 'variables')
+    if variables:
+        variables = variables[0]
+    else:
+        variables = []
+
+    for v in variables:
+        variable_names.append(v['name'])
+
+    # number of scripts per sprite
+    sprites = get_recursively(j, 'objName')
+
+    # add a sprite and a list of scripts for it for each entry in json
+    for index1, sprite in enumerate(sprites):
+        num_scripts = None
+
+        if 'scripts' in sprite:
+            num_scripts = len(sprite['scripts'])
+        else:
+            num_scripts = 0
+
+        sound_names = []
+
+        if 'sounds' in sprite:
+            for sound in sprite['sounds']:
+                sound_names.append(sound['soundName'])
+
+        return_j['sprites'].append({
+            'name': sprite['objName'],
+            'scripts': [],
+        })
+
+        if num_scripts > 0:
+            for index2, script in enumerate(sprite['scripts']):
+                valid_starts = [
+                    'whenGreenFlag',
+                    'whenIReceive',
+                    'whenCloned',
+                    'whenKeyPressed',
+                    'whenClicked',
+                    'whenSceneStarts',
+                    'whenSensorGreaterThan',
+                    'procDef'
+                ]
+
+                if script[2][0][0] not in valid_starts:
+                    continue
+
+                num_sounds = 0
+                num_variables = 0
+
+                flat_script = flatten(script)
+                num_conditions = flat_script.count('doIf') + flat_script.count('doIfElse')
+
+                for s in sound_names:
+                    if s in flat_script:
+                        num_sounds += 1
+
+                for v in variable_names:
+                    if v in flat_script:
+                        num_variables += 1
+
+                num_loops = flat_script.count('doRepeat') + flat_script.count('doForever') + flat_script.count('doUntil') + flat_script.count('doWaitUntil')
+                num_blocks = count_lists(script[2])
+
+                return_j['sprites'][index1]['scripts'].append({
+                    'conditions': num_conditions,
+                    'loops': num_loops,
+                    'blocks': num_blocks,
+                    'variables': num_variables,
+                    'sounds': num_sounds
+                })
+
+    print json.dumps(return_j, indent=4, sort_keys=True)
+
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description='Download a Scratch project!')
 
@@ -201,87 +343,10 @@ if __name__ == '__main__':
                     # with open(project_id + '-debug.json', 'w') as f2:
                     #     json.dump(j, f2, indent=4)
 
-                    # json we will be outputting
-                    return_j = {
-                        'sprites': [],
-                    }
-
-                    # number of variables per script
-                    variable_names = []
-                    variables = get_recursively(j, 'variables')
-                    if variables:
-                        variables = variables[0]
+                    if args.o.endswith('sb3'):
+                        parsed_data = parse_sb3(j)
                     else:
-                        variables = []
-
-                    for v in variables:
-                        variable_names.append(v['name'])
-
-                    # number of scripts per sprite
-                    sprites = get_recursively(j, 'objName')
-
-                    # add a sprite and a list of scripts for it for each entry in json
-                    for index1, sprite in enumerate(sprites):
-                        num_scripts = None
-
-                        if 'scripts' in sprite:
-                            num_scripts = len(sprite['scripts'])
-                        else:
-                            num_scripts = 0
-
-                        sound_names = []
-
-                        if 'sounds' in sprite:
-                            for sound in sprite['sounds']:
-                                sound_names.append(sound['soundName'])
-
-                        return_j['sprites'].append({
-                            'name': sprite['objName'],
-                            'scripts': [],
-                        })
-
-                        if num_scripts > 0:
-                            for index2, script in enumerate(sprite['scripts']):
-                                valid_starts = [
-                                    'whenGreenFlag',
-                                    'whenIReceive',
-                                    'whenCloned',
-                                    'whenKeyPressed',
-                                    'whenClicked',
-                                    'whenSceneStarts',
-                                    'whenSensorGreaterThan',
-                                    'procDef'
-                                ]
-
-                                if script[2][0][0] not in valid_starts:
-                                    continue
-
-                                num_sounds = 0
-                                num_variables = 0
-
-                                flat_script = flatten(script)
-                                num_conditions = flat_script.count('doIf') + flat_script.count('doIfElse')
-
-                                for s in sound_names:
-                                    if s in flat_script:
-                                        num_sounds += 1
-
-                                for v in variable_names:
-                                    if v in flat_script:
-                                        num_variables += 1
-
-                                num_loops = flat_script.count('doRepeat') + flat_script.count('doForever') + flat_script.count('doUntil') + flat_script.count('doWaitUntil')
-                                num_blocks = count_lists(script[2])
-
-                                return_j['sprites'][index1]['scripts'].append({
-                                    'conditions': num_conditions,
-                                    'loops': num_loops,
-                                    'blocks': num_blocks,
-                                    'variables': num_variables,
-                                    'sounds': num_sounds
-                                })
-
-                    print json.dumps(return_j, indent=4, sort_keys=True)
+                        parsed_data = parse_sb2(j)
 
         # remove scratch assembly folder
         shutil.rmtree(project_id)

@@ -15,3 +15,10 @@ Usage:
 Output:
 
 JSON containing information on all sprites and their scripts in the project file.
+
+Note:
+####
+
+As of Scratch 3, the API used to download projects no longer applies for sb3 files;
+instead, you must download the .sb3 manually and then run the `-o` command on the
+downloaded file.
