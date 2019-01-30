@@ -127,7 +127,7 @@ def parse_sb3(data):
             num_sprites += 1
 
         for variable in target['variables']:
-            num_variables += 1
+            if 'my variable' not in variable: num_variables += 1
         
         block_keys = target['blocks'].keys()
         for key in block_keys:
@@ -135,13 +135,13 @@ def parse_sb3(data):
             block = target['blocks'][key]
             num_blocks += 1
 
-            if block['opcode'] in ['control_forever', 'control_repeat']:
+            if block['opcode'] in ['control_forever', 'control_repeat', 'control_repeat_until']:
                 num_loops += 1
 
-            if block['opcode'] in ['control_if']:
+            if block['opcode'] in ['control_if', 'control_if_else']:
                 num_conditionals += 1
 
-            if block['opcode'] in ['event_whenflagclicked']:
+            if 'event_' in block['opcode'] or block['opcode'] == 'control_start_as_clone':
                 num_scripts += 1
 
         for sound in target['sounds']:
